@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xdep"
+version = "0.1.0"
+description = "Git-to-SFTP desktop deployment tool"
+requires-python = ">=3.11"
+dependencies = ["PySide6-Essentials>=6.8,<7", "paramiko>=3.5,<5", "python-dotenv>=1.0,<2"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+
+[project.scripts]
+xdep = "xdep.app:main"
+
+[tool.setuptools.packages.find]
+include = ["xdep*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
