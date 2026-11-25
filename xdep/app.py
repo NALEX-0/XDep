@@ -84,7 +84,7 @@ class Window(QMainWindow):
     def __init__(self, data_dir=None, *, project_root=None, remote_factory=None):
         super().__init__()
         self.setWindowTitle("XDep")
-        self.resize(1080, 800)
+        self.resize(1080, 880)
         self.data_dir = Path(data_dir or QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation))
         self.project_root = Path(project_root) if project_root is not None else (
             Path(__file__).resolve().parent.parent if data_dir is None else self.data_dir / "project"
@@ -133,9 +133,6 @@ class Window(QMainWindow):
         self.connect_button = self.button("Connect", self.connect_profile, profile_row)
         self.refresh_button = self.button("Refresh connections", self.refresh_connections, profile_row)
         layout.addLayout(profile_row)
-        self.source_label = QLabel("Connections from " + self.source_file)
-        self.source_label.setWordWrap(True)
-        layout.addWidget(self.source_label)
         self.connection_detail = QLabel()
         self.connection_detail.setWordWrap(True)
         layout.addWidget(self.connection_detail)
@@ -154,19 +151,17 @@ class Window(QMainWindow):
         left = QWidget()
         left_layout = QVBoxLayout(left)
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.addWidget(QLabel("Local changes relative to HEAD"))
         self.table = QTableWidget(0, 3)
         self.table.setHorizontalHeaderLabels(["Upload", "Status", "Relative path"])
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        left_layout.addWidget(self.table)
+        left_layout.addWidget(self.table, 1)
         select_row = QHBoxLayout()
         self.all_button = self.button("Select uploadable", lambda: self.select_all(True), select_row)
         self.none_button = self.button("Clear selection", lambda: self.select_all(False), select_row)
         left_layout.addLayout(select_row)
-        left_layout.addWidget(QLabel("Deleted files stay on the server. Renames upload the new path only."))
         split.addWidget(left)
         right = QWidget()
         right_layout = QVBoxLayout(right)
@@ -195,7 +190,7 @@ class Window(QMainWindow):
         layout.addWidget(self.progress)
         self.log = QPlainTextEdit()
         self.log.setReadOnly(True)
-        self.log.setMaximumHeight(150)
+        self.log.setMaximumHeight(80)
         self.log.setPlaceholderText("Plans and per-file results appear here. Backup behavior follows .env settings.")
         layout.addWidget(self.log)
         self.statusBar().showMessage("Ready")
@@ -320,9 +315,12 @@ class Window(QMainWindow):
             else:
                 item.setFlags(Qt.ItemFlag.NoItemFlags)
             detail = change.reason or (f"From {change.old_path}; old remote path retained" if change.old_path else "")
-            for column, value in enumerate([item, QTableWidgetItem(change.status), QTableWidgetItem(change.path)]):
+            status = QTableWidgetItem("U" if change.status == "?" else change.status)
+            for column, value in enumerate([item, status, QTableWidgetItem(change.path)]):
                 value.setToolTip(detail or change.path)
                 self.table.setItem(row, column, value)
+            if change.status == "?":
+                status.setToolTip("Untracked / new file")
 
     def select_all(self, checked):
         for i, change in enumerate(self.changes):
